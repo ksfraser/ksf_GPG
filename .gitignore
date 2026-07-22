@@ -1,0 +1,25 @@
+# ksf_GPG .gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PHP
+*.log
+/vendor/
+composer.lock
+
+# Temporary
+*.tmp
+*.temp
+*.bak
+
+# Local config
+config_local.php
