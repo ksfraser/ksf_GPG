@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Ksf\GPG\Services;
 
 use Ksf\GPG\Contracts\EncryptionInterface;
+use Ksf\GPG\Contracts\GnuPGAdapterInterface;
+use Ksf\GPG\Adapter\GnuPGAdapterFactory;
 use Ksf\GPG\Entity\EncryptedFile;
 use Ksf\GPG\Exception\EncryptionFailedException;
 
@@ -20,31 +22,29 @@ use Ksf\GPG\Exception\EncryptionFailedException;
 class PasswordEncryptionService implements EncryptionInterface
 {
     /**
+     * @var GnuPGAdapterInterface
+     */
+    private GnuPGAdapterInterface $adapter;
+
+    /**
+     * Constructor
+     *
+     * @param GnuPGAdapterInterface|null $adapter If null, auto-detects best available
+     *
+     * @since 1.0.0
+     */
+    public function __construct(?GnuPGAdapterInterface $adapter = null)
+    {
+        $this->adapter = $adapter ?? GnuPGAdapterFactory::create();
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function encrypt(string $filePath, string $password): EncryptedFile
     {
-        if (!file_exists($filePath)) {
-            throw new EncryptionFailedException("File not found: {$filePath}");
-        }
-
-        $encryptedPath = $filePath . '.gpg';
+        $encryptedPath = $this->adapter->encryptWithPassword($filePath, $password);
         
-        $command = sprintf(
-            'gpg --batch --yes --symmetric --cipher-algo AES256 --passphrase %s --output %s %s 2>&1',
-            escapeshellarg($password),
-            escapeshellarg($encryptedPath),
-            escapeshellarg($filePath)
-        );
-        
-        exec($command, $output, $returnCode);
-        
-        if ($returnCode !== 0) {
-            throw new EncryptionFailedException(
-                "Password-based encryption failed: " . implode("\n", $output)
-            );
-        }
-
         $encryptedFile = new EncryptedFile($filePath);
         $encryptedFile->setEncryptedPath($encryptedPath);
         $encryptedFile->setPasswordProtected(true);
@@ -57,29 +57,7 @@ class PasswordEncryptionService implements EncryptionInterface
      */
     public function decrypt(string $filePath, string $password): string
     {
-        if (!file_exists($filePath)) {
-            throw new EncryptionFailedException("File not found: {$filePath}");
-        }
-
-        // Determine output path (remove .gpg extension if present)
-        $outputPath = preg_replace('/\.gpg$/', '', $filePath);
-        
-        $command = sprintf(
-            'gpg --batch --yes --decrypt --passphrase %s --output %s %s 2>&1',
-            escapeshellarg($password),
-            escapeshellarg($outputPath),
-            escapeshellarg($filePath)
-        );
-        
-        exec($command, $output, $returnCode);
-        
-        if ($returnCode !== 0) {
-            throw new EncryptionFailedException(
-                "Password-based decryption failed: " . implode("\n", $output)
-            );
-        }
-
-        return $outputPath;
+        return $this->adapter->decryptWithPassword($filePath, $password);
     }
 
     /**
@@ -95,5 +73,17 @@ class PasswordEncryptionService implements EncryptionInterface
         }
         
         return $password;
+    }
+
+    /**
+     * Get the underlying GnuPG adapter.
+     *
+     * @return GnuPGAdapterInterface
+     *
+     * @since 1.0.0
+     */
+    public function getAdapter(): GnuPGAdapterInterface
+    {
+        return $this->adapter;
     }
 }

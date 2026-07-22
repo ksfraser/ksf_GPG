@@ -5,8 +5,8 @@ namespace Ksf\GPG\Services;
 
 use Ksf\GPG\Contracts\GPGServiceInterface;
 use Ksf\GPG\Contracts\KeyManagerInterface;
-use Ksf\GPG\Contracts\KeyserverInterface;
-use Ksf\GPG\Contracts\EncryptionInterface;
+use Ksf\GPG\Contracts\GnuPGAdapterInterface;
+use Ksf\GPG\Adapter\GnuPGAdapterFactory;
 use Ksf\GPG\Entity\EncryptedFile;
 use Ksf\GPG\Entity\GPGKey;
 use Ksf\GPG\Entity\KeyPair;
@@ -34,32 +34,24 @@ class GPGService implements GPGServiceInterface
     private KeyManagerInterface $keyManager;
 
     /**
-     * @var KeyserverInterface|null
+     * @var GnuPGAdapterInterface
      */
-    private ?KeyserverInterface $keyserver;
-
-    /**
-     * @var EncryptionInterface
-     */
-    private EncryptionInterface $encryption;
+    private GnuPGAdapterInterface $adapter;
 
     /**
      * Constructor
      *
      * @param KeyManagerInterface $keyManager
-     * @param EncryptionInterface $encryption
-     * @param KeyserverInterface|null $keyserver
+     * @param GnuPGAdapterInterface|null $adapter If null, auto-detects best available
      *
      * @since 1.0.0
      */
     public function __construct(
         KeyManagerInterface $keyManager,
-        EncryptionInterface $encryption,
-        ?KeyserverInterface $keyserver = null
+        ?GnuPGAdapterInterface $adapter = null
     ) {
         $this->keyManager = $keyManager;
-        $this->encryption = $encryption;
-        $this->keyserver = $keyserver;
+        $this->adapter = $adapter ?? GnuPGAdapterFactory::create();
     }
 
     /**
@@ -77,24 +69,10 @@ class GPGService implements GPGServiceInterface
             throw new KeyNotFoundException($email);
         }
 
-        // Use GnuPG to create detached signature
-        $signedPath = $filePath . '.sig';
-        $fingerprint = $key->getFingerprint()->getValue();
-        
-        $command = sprintf(
-            'gpg --batch --yes --armor --detach-sign --local-user %s --output %s %s 2>&1',
-            escapeshellarg($fingerprint),
-            escapeshellarg($signedPath),
-            escapeshellarg($filePath)
+        $signedPath = $this->adapter->signFile(
+            $filePath,
+            $key->getFingerprint()->getValue()
         );
-        
-        exec($command, $output, $returnCode);
-        
-        if ($returnCode !== 0) {
-            throw new SigningFailedException(
-                "GPG signing failed: " . implode("\n", $output)
-            );
-        }
 
         $encryptedFile = new EncryptedFile($filePath);
         $encryptedFile->setSignedPath($signedPath);
@@ -118,24 +96,10 @@ class GPGService implements GPGServiceInterface
             throw new KeyNotFoundException($email);
         }
 
-        // Use GnuPG to encrypt for recipient
-        $encryptedPath = $filePath . '.gpg';
-        $fingerprint = $key->getFingerprint()->getValue();
-        
-        $command = sprintf(
-            'gpg --batch --yes --encrypt --recipient %s --output %s %s 2>&1',
-            escapeshellarg($fingerprint),
-            escapeshellarg($encryptedPath),
-            escapeshellarg($filePath)
+        $encryptedPath = $this->adapter->encryptForRecipient(
+            $filePath,
+            $key->getFingerprint()->getValue()
         );
-        
-        exec($command, $output, $returnCode);
-        
-        if ($returnCode !== 0) {
-            throw new EncryptionFailedException(
-                "GPG encryption failed: " . implode("\n", $output)
-            );
-        }
 
         $encryptedFile = new EncryptedFile($filePath);
         $encryptedFile->setEncryptedPath($encryptedPath);
@@ -167,7 +131,13 @@ class GPGService implements GPGServiceInterface
      */
     public function encryptWithPassword(string $filePath, string $password): EncryptedFile
     {
-        return $this->encryption->encrypt($filePath, $password);
+        $encryptedPath = $this->adapter->encryptWithPassword($filePath, $password);
+        
+        $encryptedFile = new EncryptedFile($filePath);
+        $encryptedFile->setEncryptedPath($encryptedPath);
+        $encryptedFile->setPasswordProtected(true);
+        
+        return $encryptedFile;
     }
 
     /**
@@ -175,7 +145,7 @@ class GPGService implements GPGServiceInterface
      */
     public function decryptWithPassword(string $filePath, string $password): string
     {
-        return $this->encryption->decrypt($filePath, $password);
+        return $this->adapter->decryptWithPassword($filePath, $password);
     }
 
     /**
@@ -210,5 +180,17 @@ class GPGService implements GPGServiceInterface
         // This would be implemented by the platform adapter (FA)
         // For now, return null
         return null;
+    }
+
+    /**
+     * Get the underlying GnuPG adapter.
+     *
+     * @return GnuPGAdapterInterface
+     *
+     * @since 1.0.0
+     */
+    public function getAdapter(): GnuPGAdapterInterface
+    {
+        return $this->adapter;
     }
 }
