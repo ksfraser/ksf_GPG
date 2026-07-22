@@ -370,6 +370,42 @@ EOF;
     /**
      * {@inheritdoc}
      */
+    public function encryptForRecipients(string $filePath, array $fingerprints): string
+    {
+        if (!file_exists($filePath)) {
+            throw new EncryptionFailedException("File not found: {$filePath}");
+        }
+
+        if (empty($fingerprints)) {
+            throw new EncryptionFailedException('No recipient fingerprints provided');
+        }
+
+        $encryptedPath = $filePath . '.gpg';
+
+        $recipientArgs = '';
+        foreach ($fingerprints as $fingerprint) {
+            $recipientArgs .= ' --recipient ' . escapeshellarg($fingerprint);
+        }
+
+        $command = sprintf(
+            'gpg --batch --yes --encrypt%s --output %s %s 2>&1',
+            $recipientArgs,
+            escapeshellarg($encryptedPath),
+            escapeshellarg($filePath)
+        );
+
+        exec($command, $output, $returnCode);
+
+        if ($returnCode !== 0) {
+            throw new EncryptionFailedException('Multi-recipient GPG encryption failed: ' . implode("\n", $output));
+        }
+
+        return $encryptedPath;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function listKeys(): array
     {
         $command = 'gpg --batch --list-keys --with-colons 2>&1';

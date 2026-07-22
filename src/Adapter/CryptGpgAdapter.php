@@ -283,6 +283,37 @@ class CryptGpgAdapter implements GnuPGAdapterInterface
     /**
      * {@inheritdoc}
      */
+    public function encryptForRecipients(string $filePath, array $fingerprints): string
+    {
+        if (!file_exists($filePath)) {
+            throw new EncryptionFailedException("File not found: {$filePath}");
+        }
+
+        if (empty($fingerprints)) {
+            throw new EncryptionFailedException('No recipient fingerprints provided');
+        }
+
+        try {
+            $gpg = $this->getGpg();
+
+            foreach ($fingerprints as $fingerprint) {
+                $gpg->addEncryptKey($fingerprint);
+            }
+
+            $encryptedPath = $filePath . '.gpg';
+            $encrypted = $gpg->encryptFile($filePath);
+
+            file_put_contents($encryptedPath, $encrypted);
+
+            return $encryptedPath;
+        } catch (\Exception $e) {
+            throw new EncryptionFailedException('Multi-recipient encryption failed: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function listKeys(): array
     {
         try {

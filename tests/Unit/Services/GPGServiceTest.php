@@ -7,10 +7,14 @@ use PHPUnit\Framework\TestCase;
 use Ksf\GPG\Services\GPGService;
 use Ksf\GPG\Contracts\KeyManagerInterface;
 use Ksf\GPG\Contracts\GnuPGAdapterInterface;
+use Ksf\GPG\Contracts\ContactResolverInterface;
+use Ksf\GPG\Contracts\SigningKeyResolverInterface;
 use Ksf\GPG\Entity\GPGKey;
 use Ksf\GPG\ValueObject\KeyId;
 use Ksf\GPG\ValueObject\Fingerprint;
 use Ksf\GPG\ValueObject\EmailAddress;
+use Ksf\GPG\Hook\GPGHookRequest;
+use Ksf\GPG\Hook\GPGTarget;
 use Ksf\GPG\Exception\KeyNotFoundException;
 
 class GPGServiceTest extends TestCase
@@ -240,5 +244,227 @@ class GPGServiceTest extends TestCase
         $this->assertSame($tempFile, $result);
         
         unlink($encryptedFile);
+    }
+
+    // =========================================================================
+    // processHookRequest tests
+    // =========================================================================
+
+    public function testProcessHookRequestFileNotFound(): void
+    {
+        $request = new GPGHookRequest('/nonexistent/file.txt', GPGHookRequest::OPERATION_SIGN);
+        $request->addTarget(new GPGTarget('customer', 1, 'test@example.com'));
+
+        $response = $this->service->processHookRequest($request);
+
+        $this->assertFalse($response->isSuccess());
+        $this->assertContains('File not found: /nonexistent/file.txt', $response->getWarnings());
+    }
+
+    public function testProcessHookRequestSignSuccess(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+        $signedPath = $tempFile . '.sig';
+
+        $fingerprint = new Fingerprint(str_repeat('AB', 20));
+        $key = $this->createMock(GPGKey::class);
+        $key->method('getFingerprint')->willReturn($fingerprint);
+
+        $this->keyManager->expects($this->once())
+            ->method('getKeyByEmail')
+            ->with('test@example.com')
+            ->willReturn($key);
+
+        $this->adapter->expects($this->once())
+            ->method('signFile')
+            ->with($tempFile, $fingerprint->getValue())
+            ->willReturn($signedPath);
+
+        $request = new GPGHookRequest($tempFile, GPGHookRequest::OPERATION_SIGN);
+        $request->addTarget(new GPGTarget('customer', 1, 'test@example.com'));
+
+        $response = $this->service->processHookRequest($request);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertCount(1, $response->getResults());
+        $this->assertTrue($response->getResults()[0]->isSuccess());
+        $this->assertSame($signedPath, $response->getFirstOutputPath());
+
+        unlink($tempFile);
+    }
+
+    public function testProcessHookRequestEncryptMultiRecipient(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+        $encryptedPath = $tempFile . '.gpg';
+
+        $fp1 = new Fingerprint(str_repeat('AA', 20));
+        $fp2 = new Fingerprint(str_repeat('BB', 20));
+        $key1 = $this->createMock(GPGKey::class);
+        $key1->method('getFingerprint')->willReturn($fp1);
+        $key2 = $this->createMock(GPGKey::class);
+        $key2->method('getFingerprint')->willReturn($fp2);
+
+        $this->keyManager->expects($this->exactly(2))
+            ->method('getKeyByEmail')
+            ->willReturnMap([
+                ['alice@example.com', $key1],
+                ['bob@example.com', $key2],
+            ]);
+
+        $this->adapter->expects($this->once())
+            ->method('encryptForRecipients')
+            ->with($tempFile, [$fp1->getValue(), $fp2->getValue()])
+            ->willReturn($encryptedPath);
+
+        $request = new GPGHookRequest($tempFile, GPGHookRequest::OPERATION_ENCRYPT);
+        $request->addTarget(new GPGTarget('customer', 1, 'alice@example.com'));
+        $request->addTarget(new GPGTarget('customer', 2, 'bob@example.com'));
+
+        $response = $this->service->processHookRequest($request);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertCount(2, $response->getResults());
+        $this->assertSame(2, $response->getSuccessCount());
+        $this->assertSame($encryptedPath, $response->getFirstOutputPath());
+
+        unlink($tempFile);
+    }
+
+    public function testProcessHookRequestEncryptPartialFailure(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+        $encryptedPath = $tempFile . '.gpg';
+
+        $fp1 = new Fingerprint(str_repeat('AA', 20));
+        $key1 = $this->createMock(GPGKey::class);
+        $key1->method('getFingerprint')->willReturn($fp1);
+
+        // alice has key, bob does not
+        $this->keyManager->expects($this->exactly(2))
+            ->method('getKeyByEmail')
+            ->willReturnMap([
+                ['alice@example.com', $key1],
+                ['bob@example.com', null],
+            ]);
+
+        $this->adapter->expects($this->once())
+            ->method('encryptForRecipients')
+            ->with($tempFile, [$fp1->getValue()])
+            ->willReturn($encryptedPath);
+
+        $request = new GPGHookRequest($tempFile, GPGHookRequest::OPERATION_ENCRYPT);
+        $request->addTarget(new GPGTarget('customer', 1, 'alice@example.com'));
+        $request->addTarget(new GPGTarget('customer', 2, 'bob@example.com'));
+
+        $response = $this->service->processHookRequest($request);
+
+        // Overall success is false because bob had no key
+        $this->assertFalse($response->isSuccess());
+        $this->assertCount(2, $response->getResults());
+        // alice succeeded
+        $this->assertTrue($response->getResults()[0]->isSuccess());
+        $this->assertTrue($response->getResults()[0]->isKeyFound());
+        // bob had no key — result not successful, but has warning
+        $this->assertFalse($response->getResults()[1]->isSuccess());
+        $this->assertFalse($response->getResults()[1]->isKeyFound());
+        $this->assertNotEmpty($response->getResults()[1]->getWarnings());
+
+        unlink($tempFile);
+    }
+
+    public function testProcessHookRequestPasswordEncrypt(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+        $encryptedPath = $tempFile . '.gpg';
+
+        $this->adapter->expects($this->once())
+            ->method('encryptWithPassword')
+            ->with($tempFile, 'my-password')
+            ->willReturn($encryptedPath);
+
+        $request = new GPGHookRequest($tempFile, GPGHookRequest::OPERATION_PASSWORD_ENCRYPT);
+        $request->setPassword('my-password');
+        $request->addTarget(new GPGTarget('customer', 1));
+
+        $response = $this->service->processHookRequest($request);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertTrue($response->getResults()[0]->isUsedPasswordFallback());
+        $this->assertSame($encryptedPath, $response->getFirstOutputPath());
+
+        unlink($tempFile);
+    }
+
+    public function testProcessHookRequestUnknownOperation(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+
+        $request = new GPGHookRequest($tempFile, 'unknown_op');
+        $request->addTarget(new GPGTarget('customer', 1, 'test@example.com'));
+
+        $response = $this->service->processHookRequest($request);
+
+        $this->assertFalse($response->isSuccess());
+        $this->assertContains('Unknown operation: unknown_op', $response->getWarnings());
+
+        unlink($tempFile);
+    }
+
+    public function testProcessHookRequestWithContactResolver(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+        $signedPath = $tempFile . '.sig';
+
+        $fingerprint = new Fingerprint(str_repeat('AB', 20));
+        $key = $this->createMock(GPGKey::class);
+        $key->method('getFingerprint')->willReturn($fingerprint);
+
+        $this->keyManager->expects($this->once())
+            ->method('getKeyByEmail')
+            ->with('resolved@example.com')
+            ->willReturn($key);
+
+        $this->adapter->expects($this->once())
+            ->method('signFile')
+            ->willReturn($signedPath);
+
+        $contactResolver = $this->createMock(ContactResolverInterface::class);
+        $contactResolver->expects($this->once())
+            ->method('resolveEmail')
+            ->with('customer', 42)
+            ->willReturn('resolved@example.com');
+
+        $request = new GPGHookRequest($tempFile, GPGHookRequest::OPERATION_SIGN);
+        $request->addTarget(new GPGTarget('customer', 42));
+
+        $response = $this->service->processHookRequest($request, $contactResolver);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertSame('resolved@example.com', $response->getResults()[0]->getTarget()->getEmail());
+
+        unlink($tempFile);
+    }
+
+    public function testProcessHookRequestNoEmailNoKey(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+
+        $request = new GPGHookRequest($tempFile, GPGHookRequest::OPERATION_SIGN);
+        $request->addTarget(new GPGTarget('customer', 99));
+
+        $response = $this->service->processHookRequest($request);
+
+        $this->assertFalse($response->isSuccess());
+        $this->assertNotEmpty($response->getResults()[0]->getWarnings());
+
+        unlink($tempFile);
     }
 }

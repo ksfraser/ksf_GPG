@@ -127,6 +127,17 @@ interface GnuPGAdapterInterface
     public function publishToKeyserver(string $keyId, string $keyserverUrl): bool;
 
     /**
+     * Encrypt a file for multiple recipients (single encrypted file, multiple keys).
+     *
+     * @param string $filePath
+     * @param string[] $fingerprints Array of recipient key fingerprints
+     * @return string Path to encrypted file (.gpg)
+     *
+     * @since 1.1.0
+     */
+    public function encryptForRecipients(string $filePath, array $fingerprints): string;
+
+    /**
      * List all keys in the keyring.
      *
      * @return array<int, array{key_id: string, fingerprint: string, email: string, created: string}>
