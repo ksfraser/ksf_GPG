@@ -1,0 +1,57 @@
+{
+    "name": "ksfraser/ksf_gpg",
+    "description": "GPG business logic library providing key management, signing, encryption, and keyserver operations",
+    "type": "library",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "KSF Development Team",
+            "email": "admin@ksfraser.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.3,<8.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ksf\\GPG\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ksf\\GPG\\Tests\\": "tests/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/ksfraser/Exceptions"
+        },
+        {
+            "type": "vcs",
+            "url": "https://github.com/ksfraser/Traits"
+        }
+    ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ksf\\GPG\\GPGServiceProvider"
+            ]
+        }
+    },
+    "keywords": [
+        "gpg",
+        "encryption",
+        "signing",
+        "keyserver",
+        "frontaccounting"
+    ]
+}
