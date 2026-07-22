@@ -89,6 +89,7 @@ ksf_GPG is the core business logic library for GPG operations. It provides key m
 - FR-007.3 The service shall decrypt files with the same password.
 - FR-007.4 The service shall generate secure random passwords.
 - FR-007.5 Password encryption shall not require GPG keys.
+- FR-007.6 This is used by CRM/HRM/Suppliers for contacts without GPG keys (NOT by EmailManager).
 
 ---
 
