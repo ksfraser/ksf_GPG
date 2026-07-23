@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Contracts;
+namespace ksfraser\GPG\Contracts;
 
-use Ksf\GPG\Entity\GPGKey;
-use Ksf\GPG\Entity\KeyPair;
-use Ksf\GPG\Exception\GPGException;
-use Ksf\GPG\Exception\KeyNotFoundException;
+use ksfraser\GPG\Entity\GPGKey;
+use ksfraser\GPG\Entity\KeyPair;
+use ksfraser\GPG\Exception\GPGException;
+use ksfraser\GPG\Exception\KeyNotFoundException;
 
 /**
  * Key Manager Interface

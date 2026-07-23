@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\ValueObject;
+namespace ksfraser\GPG\ValueObject;
 
-use Ksf\GPG\Exception\InvalidFingerprintException;
+use ksfraser\GPG\Exception\InvalidFingerprintException;
 
 /**
  * Fingerprint Value Object

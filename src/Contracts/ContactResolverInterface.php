@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Contracts;
+namespace ksfraser\GPG\Contracts;
 
 /**
  * Contact Resolver Interface

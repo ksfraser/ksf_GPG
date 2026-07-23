@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Services;
+namespace ksfraser\GPG\Services;
 
-use Ksf\GPG\Contracts\EncryptionInterface;
-use Ksf\GPG\Contracts\GnuPGAdapterInterface;
-use Ksf\GPG\Adapter\GnuPGAdapterFactory;
-use Ksf\GPG\Entity\EncryptedFile;
-use Ksf\GPG\Exception\EncryptionFailedException;
+use ksfraser\GPG\Contracts\EncryptionInterface;
+use ksfraser\GPG\Contracts\GnuPGAdapterInterface;
+use ksfraser\GPG\Adapter\GnuPGAdapterFactory;
+use ksfraser\GPG\Entity\EncryptedFile;
+use ksfraser\GPG\Exception\EncryptionFailedException;
 
 /**
  * Password Encryption Service

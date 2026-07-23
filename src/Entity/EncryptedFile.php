@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Entity;
+namespace ksfraser\GPG\Entity;
 
 /**
  * EncryptedFile Entity

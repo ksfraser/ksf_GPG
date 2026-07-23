@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Contracts;
+namespace ksfraser\GPG\Contracts;
 
-use Ksf\GPG\Entity\EncryptedFile;
-use Ksf\GPG\Exception\EncryptionFailedException;
+use ksfraser\GPG\Entity\EncryptedFile;
+use ksfraser\GPG\Exception\EncryptionFailedException;
 
 /**
  * Encryption Interface

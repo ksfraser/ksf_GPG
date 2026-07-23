@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Hook;
+namespace ksfraser\GPG\Hook;
 
 /**
  * Result DTO for a single target within a GPG hook operation.

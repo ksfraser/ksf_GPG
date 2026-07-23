@@ -19,7 +19,7 @@ GPG business logic library providing key management, signing, encryption, and ke
 ```
 ksf_GPG/
 ├── src/
-│   └── Ksf/
+│   └── ksfraser/
 │       └── GPG/
 │           ├── Contracts/
 │           │   ├── GPGServiceInterface.php
@@ -76,14 +76,14 @@ ksf_GPG/
 ## Namespace Convention
 
 ```php
-Ksf\GPG\                              # Root namespace
-Ksf\GPG\Contracts\                    # Interfaces
-Ksf\GPG\Services\                     # Business logic services
-Ksf\GPG\Entity\                       # Domain entities
-Ksf\GPG\ValueObject\                  # Immutable value objects
-Ksf\GPG\Repository\                   # Data access abstraction
-Ksf\GPG\Exception\                    # Module exceptions
-Ksf\GPG\Event\                        # Domain events
+ksfraser\GPG\                              # Root namespace (non-FA library)
+ksfraser\GPG\Contracts\                    # Interfaces
+ksfraser\GPG\Services\                     # Business logic services
+ksfraser\GPG\Entity\                       # Domain entities
+ksfraser\GPG\ValueObject\                  # Immutable value objects
+ksfraser\GPG\Repository\                   # Data access abstraction
+ksfraser\GPG\Exception\                    # Module exceptions
+ksfraser\GPG\Event\                        # Domain events
 ```
 
 ---
@@ -171,7 +171,7 @@ public function generateKey(string $email, string $passphrase): KeyPair
 Main entry point for GPG operations:
 
 ```php
-use Ksf\GPG\Services\GPGService;
+use ksfraser\GPG\Services\GPGService;
 
 $gpg = new GPGService();
 
@@ -199,7 +199,7 @@ $gpg->publishToKeyserver($keyId);
 Key lifecycle management:
 
 ```php
-use Ksf\GPG\Services\KeyManagerService;
+use ksfraser\GPG\Services\KeyManagerService;
 
 $keyManager = new KeyManagerService();
 
@@ -227,7 +227,7 @@ $keyManager->deleteKey($keyId, $passphrase);
 Keyserver operations:
 
 ```php
-use Ksf\GPG\Services\KeyserverService;
+use ksfraser\GPG\Services\KeyserverService;
 
 $keyserver = new KeyserverService();
 
@@ -246,7 +246,7 @@ $key = $keyserver->import($keyId);
 Symmetric encryption without keys:
 
 ```php
-use Ksf\GPG\Services\PasswordEncryptionService;
+use ksfraser\GPG\Services\PasswordEncryptionService;
 
 $encryption = new PasswordEncryptionService();
 
@@ -267,11 +267,11 @@ $password = $encryption->generatePassword(32);
 ### GPGKey
 
 ```php
-namespace Ksf\GPG\Entity;
+namespace ksfraser\GPG\Entity;
 
-use Ksf\GPG\ValueObject\Fingerprint;
-use Ksf\GPG\ValueObject\KeyId;
-use Ksf\GPG\ValueObject\EmailAddress;
+use ksfraser\GPG\ValueObject\Fingerprint;
+use ksfraser\GPG\ValueObject\KeyId;
+use ksfraser\GPG\ValueObject\EmailAddress;
 
 class GPGKey
 {
@@ -328,7 +328,7 @@ class GPGKey
 ### EncryptedFile
 
 ```php
-namespace Ksf\GPG\Entity;
+namespace ksfraser\GPG\Entity;
 
 class EncryptedFile
 {
@@ -393,18 +393,18 @@ class EncryptedFile
 
 ```
 \Exception (or \RuntimeException)
-└── Ksf\GPG\Exception\GPGException (base)
-    └── Ksf\GPG\Exception\KeyNotFoundException
-    └── Ksf\GPG\Exception\KeyserverException
-    └── Ksf\GPG\Exception\EncryptionFailedException
-    └── Ksf\GPG\Exception\SigningFailedException
+└── ksfraser\GPG\Exception\GPGException (base)
+    └── ksfraser\GPG\Exception\KeyNotFoundException
+    └── ksfraser\GPG\Exception\KeyserverException
+    └── ksfraser\GPG\Exception\EncryptionFailedException
+    └── ksfraser\GPG\Exception\SigningFailedException
 ```
 
 ### Usage
 
 ```php
-use Ksf\GPG\Exception\KeyNotFoundException;
-use Ksf\GPG\Exception\EncryptionFailedException;
+use ksfraser\GPG\Exception\KeyNotFoundException;
+use ksfraser\GPG\Exception\EncryptionFailedException;
 
 try {
     $key = $keyManager->getKeyByEmail($email);
@@ -439,11 +439,11 @@ try {
 
 ### Test Structure
 ```php
-namespace Ksf\GPG\Tests\Unit\Services;
+namespace ksfraser\GPG\Tests\Unit\Services;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\Services\GPGService;
-use Ksf\GPG\Exception\KeyNotFoundException;
+use ksfraser\GPG\Services\GPGService;
+use ksfraser\GPG\Exception\KeyNotFoundException;
 
 class GPGServiceTest extends TestCase
 {

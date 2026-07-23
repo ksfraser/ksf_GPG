@@ -18,12 +18,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Ksf\\GPG\\": "src/"
+            "ksfraser\\GPG\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Ksf\\GPG\\Tests\\": "tests/"
+            "ksfraser\\GPG\\Tests\\": "tests/"
         }
     },
     "repositories": [
@@ -44,7 +44,7 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Ksf\\GPG\\GPGServiceProvider"
+                "ksfraser\\GPG\\GPGServiceProvider"
             ]
         }
     },

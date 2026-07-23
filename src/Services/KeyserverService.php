@@ -1,17 +1,17 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Services;
+namespace ksfraser\GPG\Services;
 
-use Ksf\GPG\Contracts\KeyserverInterface;
-use Ksf\GPG\Contracts\KeyManagerInterface;
-use Ksf\GPG\Contracts\GnuPGAdapterInterface;
-use Ksf\GPG\Adapter\GnuPGAdapterFactory;
-use Ksf\GPG\Entity\GPGKey;
-use Ksf\GPG\ValueObject\EmailAddress;
-use Ksf\GPG\ValueObject\Fingerprint;
-use Ksf\GPG\ValueObject\KeyId;
-use Ksf\GPG\Exception\KeyserverException;
+use ksfraser\GPG\Contracts\KeyserverInterface;
+use ksfraser\GPG\Contracts\KeyManagerInterface;
+use ksfraser\GPG\Contracts\GnuPGAdapterInterface;
+use ksfraser\GPG\Adapter\GnuPGAdapterFactory;
+use ksfraser\GPG\Entity\GPGKey;
+use ksfraser\GPG\ValueObject\EmailAddress;
+use ksfraser\GPG\ValueObject\Fingerprint;
+use ksfraser\GPG\ValueObject\KeyId;
+use ksfraser\GPG\Exception\KeyserverException;
 
 /**
  * Keyserver Service

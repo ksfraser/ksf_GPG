@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Adapter;
+namespace ksfraser\GPG\Adapter;
 
-use Ksf\GPG\Contracts\GnuPGAdapterInterface;
+use ksfraser\GPG\Contracts\GnuPGAdapterInterface;
 
 /**
  * GnuPG Adapter Factory

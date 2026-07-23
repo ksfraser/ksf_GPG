@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\ValueObject;
+namespace ksfraser\GPG\ValueObject;
 
-use Ksf\GPG\Exception\InvalidEmailException;
+use ksfraser\GPG\Exception\InvalidEmailException;
 
 /**
  * Email Address Value Object

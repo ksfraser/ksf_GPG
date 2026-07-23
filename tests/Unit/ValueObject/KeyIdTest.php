@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\ValueObject;
+namespace ksfraser\GPG\Tests\Unit\ValueObject;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\ValueObject\KeyId;
-use Ksf\GPG\Exception\InvalidKeyIdException;
+use ksfraser\GPG\ValueObject\KeyId;
+use ksfraser\GPG\Exception\InvalidKeyIdException;
 
 class KeyIdTest extends TestCase
 {

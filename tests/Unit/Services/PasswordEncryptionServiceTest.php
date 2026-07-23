@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\Services;
+namespace ksfraser\GPG\Tests\Unit\Services;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\Services\PasswordEncryptionService;
-use Ksf\GPG\Exception\EncryptionFailedException;
+use ksfraser\GPG\Services\PasswordEncryptionService;
+use ksfraser\GPG\Exception\EncryptionFailedException;
 
 class PasswordEncryptionServiceTest extends TestCase
 {

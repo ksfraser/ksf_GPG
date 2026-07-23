@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Contracts;
+namespace ksfraser\GPG\Contracts;
 
-use Ksf\GPG\Entity\GPGKey;
-use Ksf\GPG\Exception\KeyserverException;
+use ksfraser\GPG\Entity\GPGKey;
+use ksfraser\GPG\Exception\KeyserverException;
 
 /**
  * Keyserver Interface

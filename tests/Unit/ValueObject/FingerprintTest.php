@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\ValueObject;
+namespace ksfraser\GPG\Tests\Unit\ValueObject;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\ValueObject\Fingerprint;
-use Ksf\GPG\Exception\InvalidFingerprintException;
+use ksfraser\GPG\ValueObject\Fingerprint;
+use ksfraser\GPG\Exception\InvalidFingerprintException;
 
 class FingerprintTest extends TestCase
 {

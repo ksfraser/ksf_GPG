@@ -1,21 +1,21 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\Services;
+namespace ksfraser\GPG\Tests\Unit\Services;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\Services\GPGService;
-use Ksf\GPG\Contracts\KeyManagerInterface;
-use Ksf\GPG\Contracts\GnuPGAdapterInterface;
-use Ksf\GPG\Contracts\ContactResolverInterface;
-use Ksf\GPG\Contracts\SigningKeyResolverInterface;
-use Ksf\GPG\Entity\GPGKey;
-use Ksf\GPG\ValueObject\KeyId;
-use Ksf\GPG\ValueObject\Fingerprint;
-use Ksf\GPG\ValueObject\EmailAddress;
-use Ksf\GPG\Hook\GPGHookRequest;
-use Ksf\GPG\Hook\GPGTarget;
-use Ksf\GPG\Exception\KeyNotFoundException;
+use ksfraser\GPG\Services\GPGService;
+use ksfraser\GPG\Contracts\KeyManagerInterface;
+use ksfraser\GPG\Contracts\GnuPGAdapterInterface;
+use ksfraser\GPG\Contracts\ContactResolverInterface;
+use ksfraser\GPG\Contracts\SigningKeyResolverInterface;
+use ksfraser\GPG\Entity\GPGKey;
+use ksfraser\GPG\ValueObject\KeyId;
+use ksfraser\GPG\ValueObject\Fingerprint;
+use ksfraser\GPG\ValueObject\EmailAddress;
+use ksfraser\GPG\Hook\GPGHookRequest;
+use ksfraser\GPG\Hook\GPGTarget;
+use ksfraser\GPG\Exception\KeyNotFoundException;
 
 class GPGServiceTest extends TestCase
 {
@@ -362,16 +362,18 @@ class GPGServiceTest extends TestCase
 
         $response = $this->service->processHookRequest($request);
 
-        // Overall success is false because bob had no key
-        $this->assertFalse($response->isSuccess());
+        // Overall success is true — we produced an encrypted file
+        // bob gets a warning but still gets the output path
+        $this->assertTrue($response->isSuccess());
         $this->assertCount(2, $response->getResults());
-        // alice succeeded
+        // alice succeeded with key
         $this->assertTrue($response->getResults()[0]->isSuccess());
         $this->assertTrue($response->getResults()[0]->isKeyFound());
-        // bob had no key — result not successful, but has warning
-        $this->assertFalse($response->getResults()[1]->isSuccess());
+        // bob had no key but still gets the encrypted file + warning
+        $this->assertTrue($response->getResults()[1]->isSuccess());
         $this->assertFalse($response->getResults()[1]->isKeyFound());
         $this->assertNotEmpty($response->getResults()[1]->getWarnings());
+        $this->assertSame($encryptedPath, $response->getResults()[1]->getOutputPath());
 
         unlink($tempFile);
     }
@@ -462,8 +464,31 @@ class GPGServiceTest extends TestCase
 
         $response = $this->service->processHookRequest($request);
 
+        // Sign with no key = failure (can't sign without a key)
         $this->assertFalse($response->isSuccess());
         $this->assertNotEmpty($response->getResults()[0]->getWarnings());
+
+        unlink($tempFile);
+    }
+
+    public function testProcessHookRequestEncryptNoKeysReturnsOriginal(): void
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'gpg_test_');
+        file_put_contents($tempFile, 'test content');
+
+        // No keys anywhere — encrypt should return original file
+        $this->keyManager->expects($this->once())
+            ->method('getKeyByEmail')
+            ->willReturn(null);
+
+        $request = new GPGHookRequest($tempFile, GPGHookRequest::OPERATION_ENCRYPT);
+        $request->addTarget(new GPGTarget('customer', 1, 'nokey@example.com'));
+
+        $response = $this->service->processHookRequest($request);
+
+        $this->assertTrue($response->isSuccess());
+        $this->assertSame($tempFile, $response->getFirstOutputPath());
+        $this->assertNotEmpty($response->getWarnings());
 
         unlink($tempFile);
     }

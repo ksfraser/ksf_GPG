@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Entity;
+namespace ksfraser\GPG\Entity;
 
-use Ksf\GPG\ValueObject\EmailAddress;
-use Ksf\GPG\ValueObject\Fingerprint;
-use Ksf\GPG\ValueObject\KeyId;
+use ksfraser\GPG\ValueObject\EmailAddress;
+use ksfraser\GPG\ValueObject\Fingerprint;
+use ksfraser\GPG\ValueObject\KeyId;
 
 /**
  * GPG Key Entity

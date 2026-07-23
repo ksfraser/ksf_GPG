@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Exception;
+namespace ksfraser\GPG\Exception;
 
 /**
  * Base GPG Exception

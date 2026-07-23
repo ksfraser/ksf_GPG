@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\Entity;
+namespace ksfraser\GPG\Tests\Unit\Entity;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\Entity\KeyPair;
-use Ksf\GPG\Entity\GPGKey;
-use Ksf\GPG\ValueObject\KeyId;
-use Ksf\GPG\ValueObject\Fingerprint;
-use Ksf\GPG\ValueObject\EmailAddress;
+use ksfraser\GPG\Entity\KeyPair;
+use ksfraser\GPG\Entity\GPGKey;
+use ksfraser\GPG\ValueObject\KeyId;
+use ksfraser\GPG\ValueObject\Fingerprint;
+use ksfraser\GPG\ValueObject\EmailAddress;
 
 class KeyPairTest extends TestCase
 {

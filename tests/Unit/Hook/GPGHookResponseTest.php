@@ -1,12 +1,12 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\Hook;
+namespace ksfraser\GPG\Tests\Unit\Hook;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\Hook\GPGTarget;
-use Ksf\GPG\Hook\GPGTargetResult;
-use Ksf\GPG\Hook\GPGHookResponse;
+use ksfraser\GPG\Hook\GPGTarget;
+use ksfraser\GPG\Hook\GPGTargetResult;
+use ksfraser\GPG\Hook\GPGHookResponse;
 
 class GPGHookResponseTest extends TestCase
 {

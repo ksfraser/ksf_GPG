@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Contracts;
+namespace ksfraser\GPG\Contracts;
 
-use Ksf\GPG\Entity\EncryptedFile;
-use Ksf\GPG\Entity\GPGKey;
-use Ksf\GPG\Entity\KeyPair;
-use Ksf\GPG\Hook\GPGHookRequest;
-use Ksf\GPG\Hook\GPGHookResponse;
+use ksfraser\GPG\Entity\EncryptedFile;
+use ksfraser\GPG\Entity\GPGKey;
+use ksfraser\GPG\Entity\KeyPair;
+use ksfraser\GPG\Hook\GPGHookRequest;
+use ksfraser\GPG\Hook\GPGHookResponse;
 
 /**
  * GPG Service Interface

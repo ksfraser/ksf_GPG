@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Contracts;
+namespace ksfraser\GPG\Contracts;
 
-use Ksf\GPG\Entity\GPGKey;
+use ksfraser\GPG\Entity\GPGKey;
 
 /**
  * Key Repository Interface

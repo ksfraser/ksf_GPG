@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Hook;
+namespace ksfraser\GPG\Hook;
 
 /**
  * Represents a single recipient target for a GPG operation.

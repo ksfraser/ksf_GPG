@@ -1,13 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Adapter;
+namespace ksfraser\GPG\Adapter;
 
-use Ksf\GPG\Contracts\GnuPGAdapterInterface;
-use Ksf\GPG\Exception\GPGException;
-use Ksf\GPG\Exception\EncryptionFailedException;
-use Ksf\GPG\Exception\SigningFailedException;
-use Ksf\GPG\Exception\KeyNotFoundException;
+use ksfraser\GPG\Contracts\GnuPGAdapterInterface;
+use ksfraser\GPG\Exception\GPGException;
+use ksfraser\GPG\Exception\EncryptionFailedException;
+use ksfraser\GPG\Exception\SigningFailedException;
+use ksfraser\GPG\Exception\KeyNotFoundException;
 
 /**
  * CLI GPG Adapter

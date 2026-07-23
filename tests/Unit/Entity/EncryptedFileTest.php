@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\Entity;
+namespace ksfraser\GPG\Tests\Unit\Entity;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\Entity\EncryptedFile;
+use ksfraser\GPG\Entity\EncryptedFile;
 
 class EncryptedFileTest extends TestCase
 {

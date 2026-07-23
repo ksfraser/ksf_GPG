@@ -1,11 +1,11 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\ValueObject;
+namespace ksfraser\GPG\Tests\Unit\ValueObject;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\ValueObject\EmailAddress;
-use Ksf\GPG\Exception\InvalidEmailException;
+use ksfraser\GPG\ValueObject\EmailAddress;
+use ksfraser\GPG\Exception\InvalidEmailException;
 
 class EmailAddressTest extends TestCase
 {

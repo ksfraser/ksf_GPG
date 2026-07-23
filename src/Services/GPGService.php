@@ -1,25 +1,25 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Services;
+namespace ksfraser\GPG\Services;
 
-use Ksf\GPG\Contracts\GPGServiceInterface;
-use Ksf\GPG\Contracts\KeyManagerInterface;
-use Ksf\GPG\Contracts\GnuPGAdapterInterface;
-use Ksf\GPG\Contracts\ContactResolverInterface;
-use Ksf\GPG\Contracts\SigningKeyResolverInterface;
-use Ksf\GPG\Adapter\GnuPGAdapterFactory;
-use Ksf\GPG\Entity\EncryptedFile;
-use Ksf\GPG\Entity\GPGKey;
-use Ksf\GPG\Entity\KeyPair;
-use Ksf\GPG\Hook\GPGHookRequest;
-use Ksf\GPG\Hook\GPGHookResponse;
-use Ksf\GPG\Hook\GPGTarget;
-use Ksf\GPG\Hook\GPGTargetResult;
-use Ksf\GPG\Exception\GPGException;
-use Ksf\GPG\Exception\KeyNotFoundException;
-use Ksf\GPG\Exception\SigningFailedException;
-use Ksf\GPG\Exception\EncryptionFailedException;
+use ksfraser\GPG\Contracts\GPGServiceInterface;
+use ksfraser\GPG\Contracts\KeyManagerInterface;
+use ksfraser\GPG\Contracts\GnuPGAdapterInterface;
+use ksfraser\GPG\Contracts\ContactResolverInterface;
+use ksfraser\GPG\Contracts\SigningKeyResolverInterface;
+use ksfraser\GPG\Adapter\GnuPGAdapterFactory;
+use ksfraser\GPG\Entity\EncryptedFile;
+use ksfraser\GPG\Entity\GPGKey;
+use ksfraser\GPG\Entity\KeyPair;
+use ksfraser\GPG\Hook\GPGHookRequest;
+use ksfraser\GPG\Hook\GPGHookResponse;
+use ksfraser\GPG\Hook\GPGTarget;
+use ksfraser\GPG\Hook\GPGTargetResult;
+use ksfraser\GPG\Exception\GPGException;
+use ksfraser\GPG\Exception\KeyNotFoundException;
+use ksfraser\GPG\Exception\SigningFailedException;
+use ksfraser\GPG\Exception\EncryptionFailedException;
 
 /**
  * GPG Service
@@ -400,12 +400,12 @@ class GPGService implements GPGServiceInterface
                 return;
             }
 
-            $response->setSuccess(false);
-            $response->addWarning('No GPG keys found for any recipient');
+            // No keys, no password — return original file with warnings
+            $response->addWarning('No GPG keys found for any recipient; returning original file');
             foreach ($allResults as $result) {
-                if (!$result->isKeyFound()) {
-                    $result->setError('No GPG key found');
-                }
+                $result->setSuccess(true);
+                $result->setOutputPath($request->getFilePath());
+                $result->addWarning('No GPG key found; file returned unencrypted');
             }
             return;
         }
@@ -421,6 +421,8 @@ class GPGService implements GPGServiceInterface
                     $result->setSuccess(true);
                     $result->setOutputPath($encryptedPath);
                 } else {
+                    $result->setSuccess(true);
+                    $result->setOutputPath($encryptedPath);
                     $result->addWarning('File encrypted but not to this recipient (no key)');
                 }
             }

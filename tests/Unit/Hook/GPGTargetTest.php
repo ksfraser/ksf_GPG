@@ -1,10 +1,10 @@
 <?php
 declare(strict_types=1);
 
-namespace Ksf\GPG\Tests\Unit\Hook;
+namespace ksfraser\GPG\Tests\Unit\Hook;
 
 use PHPUnit\Framework\TestCase;
-use Ksf\GPG\Hook\GPGTarget;
+use ksfraser\GPG\Hook\GPGTarget;
 
 class GPGTargetTest extends TestCase
 {
