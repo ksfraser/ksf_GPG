@@ -234,7 +234,7 @@ class GPGService implements GPGServiceInterface
 
         // Resolve each target
         foreach ($request->getTargets() as $target) {
-            $targetResult = new GPGTargetResult($target);
+            $targetResult = new GPGTargetResult($target, $filePath);
             $allResults[] = $targetResult;
 
             // Resolve email if not provided
@@ -364,7 +364,7 @@ class GPGService implements GPGServiceInterface
 
             foreach ($allResults as $result) {
                 $result->setSuccess(true);
-                $result->setOutputPath($signedPath);
+                $result->setSignedPath($signedPath);
             }
         } catch (\Exception $e) {
             foreach ($allResults as $result) {
@@ -404,7 +404,6 @@ class GPGService implements GPGServiceInterface
             $response->addWarning('No GPG keys found for any recipient; returning original file');
             foreach ($allResults as $result) {
                 $result->setSuccess(true);
-                $result->setOutputPath($request->getFilePath());
                 $result->addWarning('No GPG key found; file returned unencrypted');
             }
             return;
@@ -417,12 +416,9 @@ class GPGService implements GPGServiceInterface
             );
 
             foreach ($allResults as $result) {
-                if ($result->isKeyFound()) {
-                    $result->setSuccess(true);
-                    $result->setOutputPath($encryptedPath);
-                } else {
-                    $result->setSuccess(true);
-                    $result->setOutputPath($encryptedPath);
+                $result->setSuccess(true);
+                $result->setEncryptedPath($encryptedPath);
+                if (!$result->isKeyFound()) {
                     $result->addWarning('File encrypted but not to this recipient (no key)');
                 }
             }
@@ -492,7 +488,7 @@ class GPGService implements GPGServiceInterface
             $signedPath = $this->adapter->signFile($encryptedPath, $signingFingerprint);
             foreach ($allResults as $result) {
                 if ($result->isSuccess()) {
-                    $result->setOutputPath($signedPath);
+                    $result->setSignedPath($signedPath);
                 }
             }
         } catch (\Exception $e) {
@@ -533,7 +529,7 @@ class GPGService implements GPGServiceInterface
 
             foreach ($allResults as $result) {
                 $result->setSuccess(true);
-                $result->setOutputPath($encryptedPath);
+                $result->setEncryptedPath($encryptedPath);
                 $result->setUsedPasswordFallback(true);
             }
         } catch (\Exception $e) {

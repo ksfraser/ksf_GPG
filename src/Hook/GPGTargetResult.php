@@ -6,9 +6,12 @@ namespace ksfraser\GPG\Hook;
 /**
  * Result DTO for a single target within a GPG hook operation.
  *
- * Tracks per-recipient outcome: success/failure, output path, key status, warnings.
+ * Carries all file paths so the calling module can decide what to send:
+ *   - originalPath: always set (the input file)
+ *   - encryptedPath: set if encryption was performed
+ *   - signedPath: set if signing was performed
  *
- * @since 1.0.0
+ * @since 1.1.0
  */
 class GPGTargetResult
 {
@@ -18,8 +21,14 @@ class GPGTargetResult
     /** @var bool Whether the operation succeeded for this target */
     private $success = false;
 
-    /** @var string|null Path to the output file (encrypted/signed) */
-    private $outputPath;
+    /** @var string Path to the original input file */
+    private $originalPath;
+
+    /** @var string|null Path to the encrypted file */
+    private $encryptedPath;
+
+    /** @var string|null Path to the signature file (.sig) */
+    private $signedPath;
 
     /** @var bool Whether a GPG key was found for this target */
     private $keyFound = false;
@@ -34,13 +43,15 @@ class GPGTargetResult
     private $error;
 
     /**
-     * @param GPGTarget $target The target this result is for
+     * @param GPGTarget $target      The target this result is for
+     * @param string    $originalPath Path to the original input file
      *
-     * @since 1.0.0
+     * @since 1.1.0
      */
-    public function __construct(GPGTarget $target)
+    public function __construct(GPGTarget $target, string $originalPath = '')
     {
         $this->target = $target;
+        $this->originalPath = $originalPath;
     }
 
     public function getTarget(): GPGTarget
@@ -59,15 +70,79 @@ class GPGTargetResult
         return $this;
     }
 
-    public function getOutputPath(): ?string
+    /**
+     * Get the original input file path (always available).
+     *
+     * @return string
+     *
+     * @since 1.1.0
+     */
+    public function getOriginalPath(): string
     {
-        return $this->outputPath;
+        return $this->originalPath;
     }
 
-    public function setOutputPath(string $path): self
+    public function setOriginalPath(string $path): self
     {
-        $this->outputPath = $path;
+        $this->originalPath = $path;
         return $this;
+    }
+
+    /**
+     * Get the encrypted file path (null if not encrypted).
+     *
+     * @return string|null
+     *
+     * @since 1.1.0
+     */
+    public function getEncryptedPath(): ?string
+    {
+        return $this->encryptedPath;
+    }
+
+    public function setEncryptedPath(string $path): self
+    {
+        $this->encryptedPath = $path;
+        return $this;
+    }
+
+    /**
+     * Get the signature file path (null if not signed).
+     *
+     * @return string|null
+     *
+     * @since 1.1.0
+     */
+    public function getSignedPath(): ?string
+    {
+        return $this->signedPath;
+    }
+
+    public function setSignedPath(string $path): self
+    {
+        $this->signedPath = $path;
+        return $this;
+    }
+
+    /**
+     * Get the "best" output path for the calling module.
+     *
+     * Priority: signed > encrypted > original.
+     * This is the file the calling module should typically attach/send.
+     *
+     * @return string
+     *
+     * @since 1.1.0
+     */
+    public function getOutputPath(): string
+    {
+        if ($this->signedPath !== null) {
+            return $this->signedPath;
+        }
+        if ($this->encryptedPath !== null) {
+            return $this->encryptedPath;
+        }
+        return $this->originalPath;
     }
 
     public function isKeyFound(): bool

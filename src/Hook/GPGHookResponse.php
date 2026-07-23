@@ -7,13 +7,14 @@ namespace ksfraser\GPG\Hook;
  * Response DTO for GPG hook operations.
  *
  * Contains overall operation status and per-target results.
- * Calling modules inspect this to determine what happened.
+ * Calling modules inspect this to determine what happened and
+ * which files to attach/send.
  *
  * @since 1.0.0
  */
 class GPGHookResponse
 {
-    /** @var bool Overall success (true only if ALL targets succeeded) */
+    /** @var bool Overall success */
     private $success = false;
 
     /** @var GPGTargetResult[] Per-target results */
@@ -23,7 +24,7 @@ class GPGHookResponse
     private $warnings = [];
 
     /**
-     * Check if the operation was fully successful (all targets).
+     * Check if the operation was successful.
      *
      * @return bool
      *
@@ -35,8 +36,6 @@ class GPGHookResponse
     }
 
     /**
-     * Set overall success status.
-     *
      * @param bool $success
      * @return self
      *
@@ -49,8 +48,6 @@ class GPGHookResponse
     }
 
     /**
-     * Add a target result.
-     *
      * @param GPGTargetResult $result
      * @return self
      *
@@ -89,8 +86,6 @@ class GPGHookResponse
     }
 
     /**
-     * Get the number of failed targets.
-     *
      * @return int
      *
      * @since 1.0.0
@@ -115,7 +110,61 @@ class GPGHookResponse
     }
 
     /**
-     * Get the first output path from successful results.
+     * Get all encrypted file paths from successful results.
+     *
+     * @return string[] Paths to encrypted files
+     *
+     * @since 1.1.0
+     */
+    public function getEncryptedPaths(): array
+    {
+        $paths = [];
+        foreach ($this->results as $result) {
+            if ($result->isSuccess() && $result->getEncryptedPath() !== null) {
+                $paths[] = $result->getEncryptedPath();
+            }
+        }
+        return array_unique($paths);
+    }
+
+    /**
+     * Get all signed file paths from successful results.
+     *
+     * @return string[] Paths to signature files (.sig)
+     *
+     * @since 1.1.0
+     */
+    public function getSignedPaths(): array
+    {
+        $paths = [];
+        foreach ($this->results as $result) {
+            if ($result->isSuccess() && $result->getSignedPath() !== null) {
+                $paths[] = $result->getSignedPath();
+            }
+        }
+        return array_unique($paths);
+    }
+
+    /**
+     * Get all original file paths.
+     *
+     * @return string[]
+     *
+     * @since 1.1.0
+     */
+    public function getOriginalPaths(): array
+    {
+        $paths = [];
+        foreach ($this->results as $result) {
+            $paths[] = $result->getOriginalPath();
+        }
+        return array_unique($paths);
+    }
+
+    /**
+     * Get the "best" output path (first successful result).
+     *
+     * Priority: signed > encrypted > original.
      *
      * @return string|null
      *
@@ -124,7 +173,7 @@ class GPGHookResponse
     public function getFirstOutputPath(): ?string
     {
         foreach ($this->results as $result) {
-            if ($result->isSuccess() && $result->getOutputPath() !== null) {
+            if ($result->isSuccess()) {
                 return $result->getOutputPath();
             }
         }
