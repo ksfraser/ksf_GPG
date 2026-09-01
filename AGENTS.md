@@ -1,720 +1,198 @@
-# AGENTS.md - ksf_GPG
-
-> **DO NOT MODIFY THIS FILE.** Create `AGENTS.local.md` for project-specific overrides.
-
-## Core Philosophy
-
-This project follows enterprise-grade software engineering principles. Every decision should align with: **SOLID**, **DRY**, **SRP**, **DI**, and **TDD**.
-
----
-
-## Architecture Overview
-
-GPG business logic library providing key management, signing, encryption, and keyserver operations. Framework-agnostic core that can be used by FA, WordPress, or any other platform adapter.
-
----
-
-## Repository Structure
-
-```
-ksf_GPG/
-├── src/
-│   └── ksfraser/
-│       └── GPG/
-│           ├── Contracts/
-│           │   ├── GPGServiceInterface.php
-│           │   ├── KeyManagerInterface.php
-│           │   ├── KeyserverInterface.php
-│           │   └── EncryptionInterface.php
-│           ├── Services/
-│           │   ├── GPGService.php
-│           │   ├── KeyManagerService.php
-│           │   ├── KeyserverService.php
-│           │   └── PasswordEncryptionService.php
-│           ├── Entity/
-│           │   ├── GPGKey.php
-│           │   ├── KeyPair.php
-│           │   └── EncryptedFile.php
-│           ├── ValueObject/
-│           │   ├── Fingerprint.php
-│           │   ├── KeyId.php
-│           │   └── EmailAddress.php
-│           ├── Repository/
-│           │   ├── KeyRepositoryInterface.php
-│           │   └── FileRepositoryInterface.php
-│           ├── Exception/
-│           │   ├── GPGException.php
-│           │   ├── KeyNotFoundException.php
-│           │   ├── KeyserverException.php
-│           │   └── EncryptionFailedException.php
-│           └── Event/
-│               ├── KeyGeneratedEvent.php
-│               ├── FileSignedEvent.php
-│               └── FileEncryptedEvent.php
-├── tests/
-│   ├── Unit/
-│   │   ├── Services/
-│   │   │   ├── GPGServiceTest.php
-│   │   │   ├── KeyManagerServiceTest.php
-│   │   │   └── PasswordEncryptionServiceTest.php
-│   │   └── Entity/
-│   │       └── GPGKeyTest.php
-│   └── Integration/
-│       ├── KeyserverTest.php
-│       └── FileEncryptionTest.php
-├── doc/
-│   └── ProjectDocuments/
-│       ├── BABOK/
-│       └── PMBOK/
-├── composer.json
-├── phpunit.xml
-└── AGENTS.md
-```
-
----
-
-## Namespace Convention
-
-```php
-ksfraser\GPG\                              # Root namespace (non-FA library)
-ksfraser\GPG\Contracts\                    # Interfaces
-ksfraser\GPG\Services\                     # Business logic services
-ksfraser\GPG\Entity\                       # Domain entities
-ksfraser\GPG\ValueObject\                  # Immutable value objects
-ksfraser\GPG\Repository\                   # Data access abstraction
-ksfraser\GPG\Exception\                    # Module exceptions
-ksfraser\GPG\Event\                        # Domain events
-```
-
----
-
-## Coding Standards
-
-### PHP Compatibility
-- **Target**: PHP 7.3 (FA 2.4.19) — no PHP 8+ features
-- Use `declare(strict_types=1);` at top of all PHP files
-- Avoid PHP 8+ features until we drop PHP 7.3 support
-
-### Naming Conventions
-- **Interfaces**: `InterfaceNameInterface` (e.g., `GPGServiceInterface`)
-- **Abstract classes**: `AbstractClassName` (e.g., `AbstractKeyManager`)
-- **Services**: `ServiceNameService` (e.g., `KeyManagerService`)
-- **Value Objects**: `ValueObjectName` (e.g., `Fingerprint`, `KeyId`)
-- **Exceptions**: `ExceptionNameException` (e.g., `KeyNotFoundException`)
-- **Events**: `EventNameEvent` (e.g., `KeyGeneratedEvent`)
-
-### Documentation
-Every class/method MUST have:
-```php
-/**
- * Short description
- * 
- * Long description with business context
- * 
- * @UML Note: Class diagram in ProjectDocs/UML.md
- * @BABOK Related: Requirements analysis, Solution evaluation
- */
-```
-
-### DocBlock Standards
-```php
-/**
- * Create a new GPG key pair.
- *
- * @param string $email Email address for the key
- * @param string $passphrase Passphrase for the private key
- * @return KeyPair The generated key pair
- * @throws GPGException If key generation fails
- * @throws EncryptionFailedException If passphrase encryption fails
- *
- * @since 1.0.0
- * @see KeyManagerService::importKey()
- */
-public function generateKey(string $email, string $passphrase): KeyPair
-```
-
-**Required tags**: `@param`, `@return`, `@throws`, `@since`
-**Optional tags**: `@see`, `@link`, `@deprecated`
-
----
-
-## Dependencies
-
-### Required Libraries
-```json
-{
-    "require": {
-        "php": ">=7.3,<8.0",
-        "ext-gnupg": "*",
-        "ksfraser/exceptions": "^1.3",
-        "ksfraser/traits": "^1.0"
-    }
-}
-```
-
-### Repositories
-```json
-{
-    "repositories": [
-        {"type": "vcs", "url": "https://github.com/ksfraser/Exceptions"},
-        {"type": "vcs", "url": "https://github.com/ksfraser/Traits"}
-    ]
-}
-```
-
----
-
-## Core Services
-
-### GPGService
-
-Main entry point for GPG operations:
-
-```php
-use ksfraser\GPG\Services\GPGService;
-
-$gpg = new GPGService();
-
-// Sign a file
-$signed = $gpg->signFile($filePath, $email);
-
-// Encrypt for recipient
-$encrypted = $gpg->encryptForContact($filePath, $email);
-
-// Sign and encrypt
-$protected = $gpg->signAndEncrypt($filePath, $email);
-
-// Password-based encryption (no key required)
-$encrypted = $gpg->encryptWithPassword($filePath, $password);
-
-// Generate new key
-$key = $gpg->generateKey($email, $passphrase);
-
-// Publish to keyserver
-$gpg->publishToKeyserver($keyId);
-```
-
-### KeyManagerService
-
-Key lifecycle management:
-
-```php
-use ksfraser\GPG\Services\KeyManagerService;
-
-$keyManager = new KeyManagerService();
-
-// Generate new key pair
-$keyPair = $keyManager->generateKey('user@example.com', 'passphrase');
-
-// Import existing key
-$key = $keyManager->importKey($keyContent, $passphrase);
-
-// Export public key
-$publicKey = $keyManager->exportPublicKey($keyId);
-
-// Get key fingerprint
-$fingerprint = $keyManager->getFingerprint($keyId);
-
-// List all keys
-$keys = $keyManager->listKeys();
-
-// Delete key
-$keyManager->deleteKey($keyId, $passphrase);
-```
-
-### KeyserverService
-
-Keyserver operations:
-
-```php
-use ksfraser\GPG\Services\KeyserverService;
-
-$keyserver = new KeyserverService();
-
-// Publish key to keyserver
-$keyserver->publish($keyId);
-
-// Search for keys by email
-$keys = $keyserver->search('user@example.com');
-
-// Import key from keyserver
-$key = $keyserver->import($keyId);
-```
-
-### PasswordEncryptionService
-
-Symmetric encryption without keys:
-
-```php
-use ksfraser\GPG\Services\PasswordEncryptionService;
-
-$encryption = new PasswordEncryptionService();
-
-// Encrypt with password
-$encrypted = $encryption->encrypt($filePath, $password);
-
-// Decrypt with password
-$decrypted = $encryption->decrypt($encryptedPath, $password);
-
-// Generate secure password
-$password = $encryption->generatePassword(32);
-```
-
----
-
-## Entity Design
-
-### GPGKey
-
-```php
-namespace ksfraser\GPG\Entity;
-
-use ksfraser\GPG\ValueObject\Fingerprint;
-use ksfraser\GPG\ValueObject\KeyId;
-use ksfraser\GPG\ValueObject\EmailAddress;
-
-class GPGKey
-{
-    private KeyId $keyId;
-    private Fingerprint $fingerprint;
-    private EmailAddress $email;
-    private string $publicKey;
-    private ?string $encryptedPrivateKey = null;
-    private bool $isPublished = false;
-    private \DateTimeImmutable $createdAt;
-    private \DateTimeImmutable $modifiedAt;
-
-    public function __construct(
-        KeyId $keyId,
-        Fingerprint $fingerprint,
-        EmailAddress $email,
-        string $publicKey
-    ) {
-        $this->keyId = $keyId;
-        $this->fingerprint = $fingerprint;
-        $this->email = $email;
-        $this->publicKey = $publicKey;
-        $this->createdAt = new \DateTimeImmutable();
-        $this->modifiedAt = new \DateTimeImmutable();
-    }
-
-    // Getters
-    public function getKeyId(): KeyId { return $this->keyId; }
-    public function getFingerprint(): Fingerprint { return $this->fingerprint; }
-    public function getEmail(): EmailAddress { return $this->email; }
-    public function getPublicKey(): string { return $this->publicKey; }
-    public function getEncryptedPrivateKey(): ?string { return $this->encryptedPrivateKey; }
-    public function isPublished(): bool { return $this->isPublished; }
-    public function getCreatedAt(): \DateTimeImmutable { return $this->createdAt; }
-    public function getModifiedAt(): \DateTimeImmutable { return $this->modifiedAt; }
-
-    // Mutators
-    public function setEncryptedPrivateKey(string $key): self
-    {
-        $this->encryptedPrivateKey = $key;
-        $this->modifiedAt = new \DateTimeImmutable();
-        return $this;
-    }
-
-    public function markAsPublished(): self
-    {
-        $this->isPublished = true;
-        $this->modifiedAt = new \DateTimeImmutable();
-        return $this;
-    }
-}
-```
-
-### EncryptedFile
-
-```php
-namespace ksfraser\GPG\Entity;
-
-class EncryptedFile
-{
-    private string $originalPath;
-    private ?string $encryptedPath = null;
-    private ?string $signedPath = null;
-    private bool $isSigned = false;
-    private bool $isEncrypted = false;
-    private bool $isPasswordProtected = false;
-    private ?string $recipientEmail = null;
-    private \DateTimeImmutable $createdAt;
-
-    public function __construct(string $originalPath)
-    {
-        $this->originalPath = $originalPath;
-        $this->createdAt = new \DateTimeImmutable();
-    }
-
-    // Getters
-    public function getOriginalPath(): string { return $this->originalPath; }
-    public function getEncryptedPath(): ?string { return $this->encryptedPath; }
-    public function getSignedPath(): ?string { return $this->signedPath; }
-    public function isSigned(): bool { return $this->isSigned; }
-    public function isEncrypted(): bool { return $this->isEncrypted; }
-    public function isPasswordProtected(): bool { return $this->isPasswordProtected; }
-    public function getRecipientEmail(): ?string { return $this->recipientEmail; }
-
-    // Mutators
-    public function setEncryptedPath(string $path): self
-    {
-        $this->encryptedPath = $path;
-        $this->isEncrypted = true;
-        return $this;
-    }
-
-    public function setSignedPath(string $path): self
-    {
-        $this->signedPath = $path;
-        $this->isSigned = true;
-        return $this;
-    }
-
-    public function setPasswordProtected(bool $protected): self
-    {
-        $this->isPasswordProtected = $protected;
-        return $this;
-    }
-
-    public function setRecipientEmail(string $email): self
-    {
-        $this->recipientEmail = $email;
-        return $this;
-    }
-}
-```
-
----
-
-## Exception Handling
-
-### Hierarchy
-
-```
-\Exception (or \RuntimeException)
-└── ksfraser\GPG\Exception\GPGException (base)
-    └── ksfraser\GPG\Exception\KeyNotFoundException
-    └── ksfraser\GPG\Exception\KeyserverException
-    └── ksfraser\GPG\Exception\EncryptionFailedException
-    └── ksfraser\GPG\Exception\SigningFailedException
-```
-
-### Usage
-
-```php
-use ksfraser\GPG\Exception\KeyNotFoundException;
-use ksfraser\GPG\Exception\EncryptionFailedException;
-
-try {
-    $key = $keyManager->getKeyByEmail($email);
-    if ($key === null) {
-        throw new KeyNotFoundException("No GPG key found for: {$email}");
-    }
-    
-    $encrypted = $gpg->encryptForContact($filePath, $email);
-} catch (KeyNotFoundException $e) {
-    // Handle missing key
-    $logger->warning($e->getMessage());
-} catch (EncryptionFailedException $e) {
-    // Handle encryption failure
-    $logger->error($e->getMessage());
-    throw $e;
-}
-```
-
----
-
-## Testing Standards
-
-### TDD Workflow
-1. **RED**: Write failing test
-2. **GREEN**: Write minimal code to pass
-3. **REFACTOR**: Improve while keeping tests green
-
-### Coverage Requirements
-- **Target**: 100% code coverage
-- **Skipped tests = failed tests** (treat as incomplete)
-- All new code requires tests
-
-### Test Structure
-```php
-namespace ksfraser\GPG\Tests\Unit\Services;
-
-use PHPUnit\Framework\TestCase;
-use ksfraser\GPG\Services\GPGService;
-use ksfraser\GPG\Exception\KeyNotFoundException;
-
-class GPGServiceTest extends TestCase
-{
-    public function testSignFileSuccess(): void
-    {
-        // Arrange
-        $service = new GPGService();
-        $filePath = '/tmp/test.txt';
-        file_put_contents($filePath, 'Test content');
-        
-        // Act
-        $result = $service->signFile($filePath, 'test@example.com');
-        
-        // Assert
-        $this->assertFileExists($result->getSignedPath());
-        
-        // Cleanup
-        unlink($filePath);
-    }
-
-    public function testSignFileThrowsExceptionForMissingKey(): void
-    {
-        // Arrange
-        $service = new GPGService();
-        $filePath = '/tmp/test.txt';
-        file_put_contents($filePath, 'Test content');
-        
-        // Act & Assert
-        $this->expectException(KeyNotFoundException::class);
-        $service->signFile($filePath, 'nonexistent@example.com');
-        
-        // Cleanup
-        unlink($filePath);
-    }
-}
-```
-
----
-
-## Design Patterns
-
-### Strategy Pattern
-- Different encryption algorithms (RSA, DSA, EdDSA)
-- Different keyserver implementations
-- Different storage backends
-
-### Factory Pattern
-- Key creation from various inputs (file, string, keyserver)
-- Entity creation from database results
-
-### Repository Pattern
-- Data access abstraction
-- Interface-based design
-- Testable without database
-
-### Event Pattern
-- Domain events for key generation, file signing, file encryption
-- Decoupled notification system
-
----
-
-## Key Storage Strategy
-
-### Problem
-Keys need to be stored securely but recoverable. Users have lost keys due to:
-- Old computer failures
-- Hard drive failures
-- Lost key files
-
-### Solution
-1. **Password-encrypted private keys**: Encrypted with passphrase before storage
-2. **Multiple storage locations**: Database, filesystem, Google Drive backup
-3. **No key dependency**: Can decrypt with password alone, no other key needed
-4. **Public key backup**: Always backup public keys (can be regenerated from keyserver)
-
-### Storage Locations
-| Location | Type | Purpose |
-|----------|------|---------|
-| Database | Encrypted | Primary storage, indexed |
-| Filesystem | Encrypted | Local cache, quick access |
-| Google Drive | Encrypted | Off-site backup |
-| Keyserver | Public | Public key recovery |
-
----
-
-## Backup Strategy (Google Drive)
-
-Using rclone for backup:
-
-```bash
-# Setup rclone (one-time)
-rclone config
-
-# Backup encrypted files
-rclone copy /path/to/encrypted/files remote:gpg-backup/
-
-# Restore from backup
-rclone copy remote:gpg-backup/ /path/to/restore/
-```
-
-### Backup Script
-```php
-class GPGBackupService
-{
-    private string $rcloneRemote;
-    private string $localPath;
-
-    public function __construct(string $rcloneRemote, string $localPath)
-    {
-        $this->rcloneRemote = $rcloneRemote;
-        $this->localPath = $localPath;
-    }
-
-    public function backup(): bool
-    {
-        $cmd = sprintf(
-            'rclone copy %s %s:%s/',
-            escapeshellarg($this->localPath),
-            escapeshellarg($this->rcloneRemote),
-            'gpg-backup'
-        );
-        
-        exec($cmd, $output, $returnCode);
-        
-        return $returnCode === 0;
-    }
-
-    public function restore(): bool
-    {
-        $cmd = sprintf(
-            'rclone copy %s:%s/ %s',
-            escapeshellarg($this->rcloneRemote),
-            'gpg-backup',
-            escapeshellarg($this->localPath)
-        );
-        
-        exec($cmd, $output, $returnCode);
-        
-        return $returnCode === 0;
-    }
-}
-```
-
----
-
-## .gitignore
-
-```
-/vendor/
-/composer.lock
-.phpunit.cache/
-.phpunit.result.cache
-.idea/
-.vscode/
-*.log
-```
-
-**Never track vendor/ or composer.lock** — each developer runs `composer install`.
-
----
-
-## Documentation Requirements
-
-### Code Documentation
-- All classes, methods, and complex logic require PHPDoc
-- Include `@UML` reference for architecture diagrams
-- Include `@BABOK` reference for requirements alignment
-
-### Project Documents (`doc/ProjectDocuments/`)
-```
-doc/ProjectDocuments/
-├── ProjectDcs/
-│   ├── Architecture.md
-│   ├── Functional Requirements.md
-│   ├── Test Plan.md
-│   └── UAT Plan.md
-├── BABOK/
-├── UML/
-└── RTM/
-```
-
-### UML Generation
-- Use `phpuml` or equivalent for class diagrams
-- Document complex functions with sequence diagrams
-- Update diagrams when architecture changes
-
----
-
-## SOLID Principles Checklist
-
-| Principle | Description | Checklist |
-|-----------|-------------|-----------|
-| **S**ingle Responsibility | One class, one purpose | Class has one reason to change |
-| **O**pen/Closed | Open for extension, closed for modification | Use interfaces and abstraction |
-| **L**iskov Substitution | Subtypes substitutable for base types | Child classes honor parent contracts |
-| **I**nterface Segregation | Small, focused interfaces | Don't force unused methods |
-| **D**ependency Inversion | Depend on abstractions | Inject dependencies via constructor |
-
----
-
-## Code Review Checklist
-
-- [ ] All new code has tests (100% coverage target)
-- [ ] PHPDoc complete with `@param`, `@return`, `@throws`, `@since`
-- [ ] No hardcoded values (use constants/config)
-- [ ] No duplicate code (extract to shared library)
-- [ ] Dependencies injected, not instantiated
-- [ ] Exception handling for all external calls
-- [ ] `.gitignore` excludes vendor/ and composer.lock
-- [ ] Interfaces used for service contracts
-- [ ] Value objects are immutable
-
----
-
-## Git & Version Control
-
-### Branch Naming
-- `main` / `master` - Production-ready code
-- `feature/*` - New features
-- `fix/*` - Bug fixes
-- `refactor/*` - Code refactoring
-
-### Commit Messages
-```
-type(scope): description
-
-feat(gpg): add password-based encryption
-fix(keymanager): handle invalid key format
-refactor(exception): simplify hierarchy
-docs(readme): update installation steps
-```
-
----
-
-## Version Tagging
-
-Follow Semantic Versioning (SemVer): `MAJOR.MINOR.PATCH`
-- **MAJOR**: Incompatible API changes
-- **MINOR**: New functionality (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
-
-```bash
-git tag -a v1.0.0 -m "Initial release with GPG functionality"
-git push origin v1.0.0
-```
-
----
-
-## Local Overrides
-
-Create `AGENTS.local.md` for project-specific overrides:
-
-```markdown
-# AGENTS.local.md
-# Project-specific overrides for ksf_GPG
-
-[Your overrides here]
-```
-
-**Note**: Core principles (SOLID, DRY, TDD) cannot be overridden.
-
----
-
-## Development Workflow
-
-All development is done in this repo. Do **not** edit files in production directly.
-
-### Workflow Steps
-1. **Develop** in this repo (feature branches preferred)
-2. **Test**: `./vendor/bin/phpunit`
-3. **Lint**: `php -l` on modified PHP files (no syntax errors)
-4. **Commit** and **Push** branch to GitHub
-5. **Merge** to `master` when ready
-6. **Push** `master` to GitHub
+# AGENTS.md — KSF FrontAccounting Architecture Notes
+
+Operational memory for the KSF FA infrastructure codebase. Files live under
+`~/Documents/ksf_Infrastructure/fa_modules/`. This doc captures cross-module
+architecture **decisions** and findings. Read this before designing or
+refactoring anything that spans modules.
+
+> **Companion doc:** `AGENTS_ARCH.md` (co-located, hardlinked into each repo)
+> holds the shared module **conventions** and cross-repo engineering standards
+> (module layout, coding/testing standards, dev/deploy workflow, inter-module
+> hook protocols, security-area registry, FA DB gotchas). This file holds only
+> decisions.
+
+## Cross-module facts (at a glance)
+
+- **PHP 7.3 is the cross-module compatibility floor** (current prod runs 7.3 on
+  Fedora 30 until a web container is stood up; the FA container runtime is 7.4).
+  See `AGENTS_ARCH.md` §1.
+- **ksf_FA_Common is now a pure Composer/Packagist package** (v1.0.9), not an FA
+  module. It was gutted to a no-op module shell. Owning modules (RBAC, CRM,
+  Calendar, HRM, Assets) register/unregister their `ksf_contact_types` on
+  activate/deactivate via embedded `sql/retag_contact_types.sql`.
+- **Square**: composer.json `config.platform.php = 7.4.33` pinned (commit
+  `b0ef4da`) for the PHP 7.4 container; lock regeneration is blocked locally on
+  the private `ksfraser/import-staging` package.
+- **FA_ProductAttributes issue #52 (child not detected as read-only)** root cause
+  found: two parallel, un-unified parent-relationship mechanisms (see below).
+
+## The "generic data-dictionary + query-builder" direction (active design)
+
+The user wants a **generic, transport-agnostic** data-dictionary + SQL query
+builder package (suggested name `ksf_common_db`), NOT another DB class, and NOT
+in `ksf_FA_Common` (whose naming is FA-module-specific). Core requirement:
+
+> An interface defines the SQL query commands. A translation layer maps them to
+> MySQL commands when outside FA, and to FA's procedural `db_*` functions when
+> inside FA, so the correct implementation can be DI'd.
+
+Requirements/goals captured from discussion:
+- Want the **data dictionary + query builder** capabilities (from the legacy
+  `ksf_modules_common` `MODEL`/`fa_MODEL` framework).
+- **No third parallel DB-class abstraction** on top of what exists.
+- Lifecycle (pre/post CRUD) hooks should be able to tie into this system.
+- Package should be usable standalone (tests, CLI, other frameworks), not just
+  inside FA.
+
+### The pattern ALREADY exists / is partially realized (critical to not rebuild)
+1. **RBAC's `DbAdapterInterface` + `FaDbAdapter` (now generalized)** — the exact
+   two-part interface→FA-translation pattern the user described: `fetchAssoc`, `fetchAll`,
+   `executeUpdate`, `lastInsertId`. `FaDbAdapter` substitutes `?` placeholders via
+   `mysqli_real_escape_string` (FA has NO prepared statements) and regex table prefixing.
+   This served as the proof of concept and has been **genericized into the
+   `ksfraser/ksf-common-db` package** (`ksfraser\CommonDb\Contract\DbConnectionInterface` /
+   `ksfraser\CommonDb\Adapter\FaDbAdapter`); the RBAC-local copies were deleted. See that
+   package's `APPENDIX.md` for the migration.
+2. **Legacy `ksf_modules_common` (procedural, older)** — the actual data-dictionary +
+   query-builder the user remembers:
+   - `class.MODEL.php` — `fields_array` + `table_details['tablename']`/`['primarykey']`
+     dictionary; clause builders `buildSelect/From/Where/Join/GroupBy/Having/OrderBy/Limit`
+     assembled by `buildSelectQuery()`; CRUD `select_row`, `select_table`,
+     `insert_table`, `update_table`, `delete_table`, `ReplaceQuery`, `create_table`,
+     `alter_table`; `define_table()` derives tablename from class name + company prefix.
+   - `class.fa_MODEL.php` — FA subclass; sets `company_prefix = TB_PREF`.
+   - `class.eventloop.php` — Observer pattern event dispatcher: `ObserverRegister`,
+     `ObserverNotify` (with `'**'` wildcard = all), subscribers implement `notified()`.
+   - **CAVEAT**: the `eventloop` Observer hooks are wired only for `NOTIFY_INIT_TABLES`
+     → `create_table` and logging. They are NOT wired into `insert_table`/`update_table`/
+     `delete_table` as pre/post CRUD points. The `tell_eventloop(..., "NOTIFY_LOG_*", ...)`
+     calls are largely logging noise.
+3. **Modern ksf_FA_Common traits (OOP, current recommendation for hooks)**
+   - `src/Traits/WorkflowHooksTrait.php` — SuiteCRM-style lifecycle hooks. Register a
+     record type → hook prefix via `registerWorkflowType($recordType, $hookPrefix)`.
+     `fireWorkflowHook()` builds `{prefix}_{hookKey}` and calls `hook_invoke_all(...)`.
+     Hook keys: `before_save`, `after_save`, `before_delete`, `after_delete`, `new`,
+     `edited`, `linked`, `unlinked`. Convenience dispatchers + `fireWorkflowHooks()`
+     runs the full ordered sequence.
+   - `src/Traits/CrudOperationsTrait.php` — `createRecord()` / `deleteRecord()` wrappers
+     that fire pre-save → create → new/edited → post-save (and pre-delete → delete →
+     post-delete), delegating the actual DB work to overridable `*Internal()` methods.
+   - Both live in `ksfraser\FrontAccounting\Common\Traits\` (namespace is FA-flavored).
+   - Adoption is currently minimal: ksf_FA_Common's own unit tests +
+     `ksf_FA_HRM/hooks.php`. Not yet rolled out module-wide.
+
+### Naming observation
+The `registerWorkflowType($recordType, $hookPrefix)` + `{prefix}_{operation}` scheme
+already achieves what the user proposed as "DB class reads `$table_name` to build
+pre/post hook name." `$table_name` should map to a hook **prefix**, not be the literal
+hook name. Per-table hooks use `hook_invoke_all` (module-oriented dispatcher from
+`includes/hooks.inc`) — consistent with FA, zero new infra. If literal table-derived
+names are wanted, add a small table→prefix mapper, don't build a new dispatcher.
+
+### PDO question (decided: YES, PDO is the standalone impl; FA uses its own adapter)
+FA's DB layer is mysqli-based, NOT PDO (`includes/db/connect_db_mysqli.inc` uses
+`mysqli_connect/query/insert_id/errno/fetch_row`; procedural `db_query`/`db_escape`/
+`db_fetch_assoc`/`db_insert_id` wrappers; FA has NO prepared statements).
+
+Design: **make PDO the consumer contract of the interface, not the transport.** Two
+implementations of one `DbConnectionInterface` (PDO-style ops: query, executeWithParams,
+fetchAll, fetchAssoc, insertId, quote, beginTransaction/commit/rollBack):
+- `PdoDbAdapter` (standalone: tests/CLI/other frameworks) — nearly a 1:1 PDO wrapper,
+  real prepared statements, multi-driver.
+- `FaDbAdapter` (inside FA) — maps each method to FA `db_*`/mysqli calls, resolves
+  `?`/`:name` placeholders to escaped literals (FA has no prepared statements), exactly
+  like the FA adapter in `ksf-common-db` (`mysqli_real_escape_string` binding + regex
+  prefixing).
+
+**HARD RULE (user directive): FA modules MUST use native `db_*` calls at runtime.**
+PDO is ONLY for the standalone/portable side (tests, CLI, non-FA embedding). The FA
+adapter is the single, mandatory implementation inside FA and must delegate every
+operation to FA's procedural `db_query`/`db_escape`/`db_fetch_assoc`/`db_insert_id`/
+`db_num_rows`/`db_error` etc. — never a PDO handle, never raw mysqli. PDO is the
+portable *contract shape*, not a runtime transport for FA. (Note: PDO is an optional
+for the FA side: the only reason to depend on it at all is standalone usage; the FA
+adapter itself needs no PDO.)
+
+PDO and FA never meet; they are alternative DI implementations of a shared contract.
+This satisfies the user's requirement: "interface that translates SQL to MySQL outside
+FA but `db_*` inside FA so the right classes can be DI'd." This is realized by the
+`ksf-common-db` package's `DbConnectionInterface` + `FaDbAdapter`/`PdoDbAdapter`.
+
+### ksf_common_db package — implemented
+The `ksfraser/ksf-common-db` package (namespace `ksfraser\CommonDb`) exists at
+`~/Documents/ksf_common_db`, is published on Packagist (`v1.0.0`), and RBAC has
+been migrated onto it. **Repo-specific implementation/packaging/migration/gotcha
+notes live in that repo's `APPENDIX.md`** — see there for structure, consumers'
+dependency convention, the RBAC migration, and the implementation gotchas. This
+section only records the shared design decisions.
+
+Structure (high level):
+- `src/Contract/DbConnectionInterface.php` — PDO-shaped contract: `fetchAssoc`,
+  `fetchAll`, `fetchScalar`, `executeUpdate`, `lastInsertId`, `quote`, `beginTransaction`,
+  `commit`, `rollBack`. Accepts `?` (positional) or `:name` (named) placeholders.
+- `src/Adapter/FaDbAdapter.php` — FA runtime adapter; native `db_*` only.
+- `src/Adapter/PdoDbAdapter.php` — native PDO + prepared statements (NOT for FA runtime).
+- `src/Dictionary/TableDefinition.php` — data dictionary + CREATE/INSERT/UPDATE/DELETE SQL.
+- `src/Query/QueryBuilder.php` — fluent parameterized SELECT builder.
+
+NEXT STEPS (cross-module): port other modules' DAOs onto `DbConnectionInterface` +
+`TableDefinition`/`QueryBuilder`, then wire the pre/post workflow hooks
+(`WorkflowHooksTrait`/`CrudOperationsTrait` from ksf_FA_Common) onto the DAO layer.
+
+## FA core hook system (reference)
+
+`includes/hooks.inc`:
+- `hook_invoke($ext, $method, &$data, $opts)` / `hook_invoke_all($method, &$data, $opts)`
+  / `hook_invoke_first` / `hook_invoke_last` — dispatch to `$Hooks` extension objects.
+- Transaction-level DB hooks exist: `hook_db_prewrite`, `hook_db_postwrite`,
+  `hook_db_prevoid` → `hook_invoke_all('db_prewrite'|'db_postwrite'|'db_prevoid', $cart,
+  $type)`. These are CART/transaction scoped (sales orders, invoices, etc.), NOT
+  per-row CRUD. Per-row CRUD hooks are not provided by core; they come from the
+  traits/adapters above.
+
+## FA_ProductAttributes issue #52 root cause (verified)
+
+Two parallel, un-unified parent-relationship mechanisms:
+
+| Concern | `product_hierarchy` (via `ProductAttributesDao`) | `product_attribute_assignments.parent_stock_id` (via `VariationsDao`) |
+|---|---|---|
+| Writes | `setProductParent($child,$parent)` (INSERT…ON DUP UPD / DELETE) | `setParentRelationship()` (called by `CreateChildAction`) AND `addAssignment(...,$parentStockId)` |
+| Reads | `getProductParent()` — **used by `VariationsTab` for `$isChild` detection** | `getProductVariations()`, `isVariation()` |
+| Populated on CreateChildAction? | **NO** — nothing calls it | **YES** |
+
+- `VariationsDao::setParentRelationship()` (VariationsDao.php:334) writes
+  `product_attribute_assignments.parent_stock_id`.
+- `ProductAttributesDao::setProductParent()`/`getProductParent()`
+  (ProductAttributesDao.php:392/416) write/read `product_hierarchy`.
+- `CreateChildAction::handle()` calls `variationsDao->setParentRelationship($childId,
+  $stockId)` (CreateChildAction.php:88) but NEVER `setProductParent()`.
+- `VariationsTab::renderTabContent()` sets `$isChild = !empty($this->dao->getProductParent($stockId))`
+  (VariationsTab.php, ~line 51-54) and renders read-only + hides buttons when child.
+- Net: generated children (`auto-gas-L-11-36-Ind` etc.) are registered only in
+  `product_attribute_assignments`, so `product_hierarchy` is empty for them →
+  `getProductParent()` returns null → `$isChild` false → read-only protection never
+  engages → issue #52/#45 reproduce.
+- `product_hierarchy` DOES get rows when someone manually sets a parent via the
+  Product Types UI (`UpdateProductTypesAction`, `ProductAttributesTabController`).
+
+Fix implications: the create-child path must also write `product_hierarchy` (call
+`setProductParent`), OR the tab's child detection must fall back to
+`product_attribute_assignments.parent_stock_id` / `isVariation()`.
+
+## SQL prefix / install conventions (from earlier work)
+
+- SQL files use a hardcoded `0_` prefix — FA `db_import` does NOT resolve
+  `@TB_PREF@`. PHP code uses the `TB_PREF` constant. Documented in
+  `ksf_FA_Common/MODULE_DIRECTORY.md` §Table Prefix Convention.
+- Assets module SQL convention: `update_databases()` paths are relative to `sql/`
+  (uses `'install.sql'`, not `'sql/install.sql'`); others prefix with `sql/`.
+- Retag/contact-type ownership SQL lives inside each owning module's `sql/`
+  (`retag_contact_types.sql`), idempotent, wired into `activate_extension()`'s
+  `$updates`. Never in an external checklist.
+
+## Cross-module contracts principle
+
+- Any ksf module must be standalone; class availability must never be gated on
+  another module's activation state.
+- Cross-module contracts/classes live in a Packagist package (e.g. ksf_FA_Common /
+  future ksf_common_db), NOT in a module dir.
