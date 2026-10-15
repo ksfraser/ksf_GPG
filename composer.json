@@ -26,33 +26,19 @@
             "ksfraser\\GPG\\Tests\\": "tests/"
         }
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/ksfraser/Exceptions"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/ksfraser/Traits"
-        }
-    ],
     "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
         "sort-packages": true
     },
-    "extra": {
-        "laravel": {
-            "providers": [
-                "ksfraser\\GPG\\GPGServiceProvider"
-            ]
-        }
-    },
     "keywords": [
         "gpg",
+        "gnupg",
         "encryption",
         "signing",
         "keyserver",
+        "pgp",
+        "openpgp",
         "frontaccounting"
     ]
 }
