@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  ksf-gpg-agent:
+    image: alpine:3.18
+    container_name: ksf-gpg-agent
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:7890:7890"
+    volumes:
+      - gpg-agent-socket:/tmp
+      - gpg-agent-log:/var/log
+    environment:
+      - GPG_AGENT_SOCKET=/tmp/ksf-gpg-agent.sock
+    command: |
+      sh -c '
+        apk add --no-cache gnupg socat bash
+        echo "Allow GPG agent connections" >> /etc/socat/gpg-agent.conf 2>/dev/null || true
+
+        while true; do
+          if [ -S /tmp/ksf-gpg-agent.sock ] || pgrep -x gpg-agent > /dev/null; then
+            echo "GPG Agent is running"
+          else
+            echo "Starting GPG agent..."
+            gpg-agent --daemon --allow-loopback-pinentry --max-cache-ttl 86400
+          fi
+          sleep 30
+        done
+      '
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+
+volumes:
+  gpg-agent-socket:
+  gpg-agent-log:
