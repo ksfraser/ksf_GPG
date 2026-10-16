@@ -23,3 +23,6 @@ composer.lock
 
 # Local config
 config_local.php
+vendor/
+.phpunit.cache/
+.phpunit.result.cache
